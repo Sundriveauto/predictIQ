@@ -38,7 +38,7 @@ pub fn validate_price(e: &Env, price: &PythPrice, config: &OracleConfig) -> Resu
     } else {
         price.price
     } as u64;
-    let max_conf = (price_abs * config.max_confidence_bps) / 10000;
+    let max_conf = (price_abs * config.max_confidence_bps as u64) / 10000;
 
     if price.conf > max_conf {
         return Err(ErrorCode::ConfidenceTooLow);

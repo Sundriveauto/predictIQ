@@ -97,6 +97,7 @@ pub fn claim_referral_rewards(
     e.storage().persistent().set(&key, &0);
 
     let client = soroban_sdk::token::Client::new(e, token);
+    e.current_contract_address().require_auth();
     client.transfer(&e.current_contract_address(), address, &balance);
 
     e.events()

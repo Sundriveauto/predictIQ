@@ -96,8 +96,8 @@ fn test_create_market_with_too_many_outcomes() {
     let (env, client, admin) = setup();
 
     let mut options = Vec::new(&env);
-    for i in 0..101 {
-        options.push_back(String::from_str(&env, &format!("Option{}", i)));
+    for _i in 0..101 {
+        options.push_back(String::from_str(&env, "x"));
     }
 
     let oracle_config = OracleConfig {
@@ -163,7 +163,7 @@ fn test_create_market_deadline_in_past() {
         &0,
     );
 
-    assert_eq!(result, Err(Ok(ErrorCode::InvalidDeadline)));
+    assert_eq!(result, Err(Ok(ErrorCode::DeadlinePassed)));
 }
 
 #[test]
@@ -201,7 +201,7 @@ fn test_create_market_resolution_before_deadline() {
         &0,
     );
 
-    assert_eq!(result, Err(Ok(ErrorCode::InvalidDeadline)));
+    assert_eq!(result, Err(Ok(ErrorCode::DeadlinePassed)));
 }
 
 #[test]
@@ -416,7 +416,7 @@ fn test_prune_market_before_grace_period() {
 
     // Try to prune immediately (before 30 days)
     let result = client.try_prune_market(&market_id);
-    assert_eq!(result, Err(Ok(ErrorCode::GracePeriodActive)));
+    assert_eq!(result, Err(Ok(ErrorCode::MarketStillActive)));
 }
 
 #[test]

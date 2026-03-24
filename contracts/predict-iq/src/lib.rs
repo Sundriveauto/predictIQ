@@ -6,7 +6,8 @@ mod modules;
 mod test;
 pub mod types;
 
-use crate::errors::ErrorCode;
+pub use errors::ErrorCode;
+
 use crate::modules::admin;
 use crate::types::{CircuitBreakerState, ConfigKey};
 

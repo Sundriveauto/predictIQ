@@ -56,6 +56,7 @@ pub fn cast_vote(
                 return Err(ErrorCode::InsufficientVotingWeight);
             }
 
+            e.current_contract_address().require_auth();
             token_client.transfer(&voter, &e.current_contract_address(), &weight);
 
             let locked = LockedTokens {
@@ -137,6 +138,7 @@ pub fn unlock_tokens(e: &Env, voter: Address, market_id: u64) -> Result<(), Erro
         .ok_or(ErrorCode::GovernanceTokenNotSet)?;
 
     let token_client = token::Client::new(e, &gov_token);
+    e.current_contract_address().require_auth();
     token_client.transfer(&e.current_contract_address(), &voter, &locked.amount);
 
     e.storage().persistent().remove(&lock_key);
