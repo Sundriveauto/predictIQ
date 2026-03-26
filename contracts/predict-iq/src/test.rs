@@ -46,6 +46,9 @@ fn create_test_market(
     let oracle_config = types::OracleConfig {
         oracle_address: Address::generate(e),
         feed_id: String::from_str(e, "test_feed"),
+        min_responses: 1,
+        max_staleness_seconds: 300,
+        max_confidence_bps: 200,
         min_responses: Some(1),
         max_staleness_seconds: 3600,
         max_confidence_bps: 200,
@@ -120,6 +123,9 @@ fn test_market_creation_fails_without_deposit() {
         &types::OracleConfig {
             oracle_address: Address::generate(&e),
             feed_id: String::from_str(&e, "test"),
+            min_responses: 1,
+            max_staleness_seconds: 300,
+            max_confidence_bps: 200,
             min_responses: Some(1),
             max_staleness_seconds: 3600,
             max_confidence_bps: 200,
@@ -987,6 +993,9 @@ fn test_create_conditional_market_parent_not_resolved() {
     let oracle_config = types::OracleConfig {
         oracle_address: Address::generate(&e),
         feed_id: String::from_str(&e, "test_feed"),
+        min_responses: 1,
+        max_staleness_seconds: 300,
+        max_confidence_bps: 200,
         min_responses: Some(1),
         max_staleness_seconds: 3600,
         max_confidence_bps: 200,
@@ -1039,6 +1048,9 @@ fn test_create_conditional_market_parent_wrong_outcome() {
     let oracle_config = types::OracleConfig {
         oracle_address: Address::generate(&e),
         feed_id: String::from_str(&e, "test_feed"),
+        min_responses: 1,
+        max_staleness_seconds: 300,
+        max_confidence_bps: 200,
         min_responses: Some(1),
         max_staleness_seconds: 3600,
         max_confidence_bps: 200,
@@ -1091,6 +1103,9 @@ fn test_create_conditional_market_success() {
     let oracle_config = types::OracleConfig {
         oracle_address: Address::generate(&e),
         feed_id: String::from_str(&e, "test_feed"),
+        min_responses: 1,
+        max_staleness_seconds: 300,
+        max_confidence_bps: 200,
         min_responses: Some(1),
         max_staleness_seconds: 3600,
         max_confidence_bps: 200,
@@ -1152,6 +1167,9 @@ fn test_place_bet_on_conditional_market_parent_not_resolved() {
     let oracle_config = types::OracleConfig {
         oracle_address: Address::generate(&e),
         feed_id: String::from_str(&e, "test_feed"),
+        min_responses: 1,
+        max_staleness_seconds: 300,
+        max_confidence_bps: 200,
         min_responses: Some(1),
         max_staleness_seconds: 3600,
         max_confidence_bps: 200,
@@ -1213,6 +1231,9 @@ fn test_place_bet_on_conditional_market_parent_wrong_outcome() {
     let oracle_config = types::OracleConfig {
         oracle_address: Address::generate(&e),
         feed_id: String::from_str(&e, "test_feed"),
+        min_responses: 1,
+        max_staleness_seconds: 300,
+        max_confidence_bps: 200,
         min_responses: Some(1),
         max_staleness_seconds: 3600,
         max_confidence_bps: 200,
@@ -1295,6 +1316,9 @@ fn test_multi_level_conditional_markets() {
     let oracle_config = types::OracleConfig {
         oracle_address: Address::generate(&e),
         feed_id: String::from_str(&e, "test_feed"),
+        min_responses: 1,
+        max_staleness_seconds: 300,
+        max_confidence_bps: 200,
         min_responses: Some(1),
         max_staleness_seconds: 3600,
         max_confidence_bps: 200,
@@ -1365,6 +1389,9 @@ fn test_create_conditional_market_invalid_parent_outcome_idx() {
     let oracle_config = types::OracleConfig {
         oracle_address: Address::generate(&e),
         feed_id: String::from_str(&e, "test_feed"),
+        min_responses: 1,
+        max_staleness_seconds: 300,
+        max_confidence_bps: 200,
         min_responses: Some(1),
         max_staleness_seconds: 3600,
         max_confidence_bps: 200,
