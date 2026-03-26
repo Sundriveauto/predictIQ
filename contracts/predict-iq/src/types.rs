@@ -121,6 +121,7 @@ pub enum ConfigKey {
     UpgradeVotes,
     GovernanceToken,
     MaxPushPayoutWinners,
+    PendingGuardianRemoval,
 }
 
 #[contracttype]
@@ -154,6 +155,14 @@ pub struct PendingUpgrade {
 pub struct UpgradeStats {
     pub votes_for: u32,
     pub votes_against: u32,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PendingGuardianRemoval {
+    pub target_guardian: Address,
+    pub initiated_at: u64,
+    pub votes_for: Vec<Address>,
 }
 
 // Constants for upgrade governance
