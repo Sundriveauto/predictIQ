@@ -283,4 +283,9 @@ impl PredictIQ {
     pub fn set_minimum_bet_amount(e: Env, amount: i128) -> Result<(), ErrorCode> {
         crate::modules::bets::set_minimum_bet_amount(&e, amount)
     }
+
+    /// Emergency pause triggered by 2/3 Guardian majority (community panic override)
+    pub fn emergency_pause(e: Env, voter: Address) -> Result<(), ErrorCode> {
+        crate::modules::governance::emergency_pause(&e, voter)
+    }
 }
