@@ -22,7 +22,7 @@ pub fn track_error(e: &Env) {
     if count > 10 {
         e.storage().persistent().set(
             &crate::types::ConfigKey::CircuitBreakerState,
-            &CircuitBreakerState::Open,
+            &crate::types::CircuitBreakerState::Open,
         );
 
         e.events()

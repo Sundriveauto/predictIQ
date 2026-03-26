@@ -1,5 +1,5 @@
 use crate::errors::ErrorCode;
-use crate::types::{ConfigKey, GOV_TTL_LOW_THRESHOLD, GOV_TTL_HIGH_THRESHOLD};
+use crate::types::{ConfigKey, GOV_TTL_HIGH_THRESHOLD, GOV_TTL_LOW_THRESHOLD};
 use soroban_sdk::{Address, Env};
 
 fn bump_gov_ttl(e: &Env, key: &ConfigKey) {

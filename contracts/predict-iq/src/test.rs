@@ -266,9 +266,10 @@ fn test_admin_can_reduce_push_threshold_for_gas_intensive_tokens() {
         types::MarketTier::Basic,
         &native_token,
     );
-    e.storage()
-        .persistent()
-        .set(&crate::modules::voting::DataKey::VoteTally(market_default, 0), &2000i128);
+    e.storage().persistent().set(
+        &crate::modules::voting::DataKey::VoteTally(market_default, 0),
+        &2000i128,
+    );
     client.resolve_market(&market_default, &0);
     let resolved_default = client.get_market(&market_default).unwrap();
     assert_eq!(resolved_default.payout_mode, types::PayoutMode::Push);
@@ -284,9 +285,10 @@ fn test_admin_can_reduce_push_threshold_for_gas_intensive_tokens() {
         types::MarketTier::Basic,
         &native_token,
     );
-    e.storage()
-        .persistent()
-        .set(&crate::modules::voting::DataKey::VoteTally(market_lowered, 0), &2000i128);
+    e.storage().persistent().set(
+        &crate::modules::voting::DataKey::VoteTally(market_lowered, 0),
+        &2000i128,
+    );
     client.resolve_market(&market_lowered, &0);
     let resolved_lowered = client.get_market(&market_lowered).unwrap();
     assert_eq!(resolved_lowered.payout_mode, types::PayoutMode::Pull);
@@ -1377,7 +1379,10 @@ fn test_pending_upgrade_survives_3_months_inactivity() {
 
     // PendingUpgrade must still be readable — TTL was set to 180 days on write
     let pending = client.get_pending_upgrade();
-    assert!(pending.is_some(), "PendingUpgrade expired after 3 months of inactivity");
+    assert!(
+        pending.is_some(),
+        "PendingUpgrade expired after 3 months of inactivity"
+    );
     assert_eq!(pending.unwrap().wasm_hash, wasm_hash);
 }
 
@@ -1400,7 +1405,11 @@ fn test_guardian_set_survives_3_months_inactivity() {
     });
 
     let stored = client.get_guardians();
-    assert_eq!(stored.len(), 1, "GuardianSet expired after 3 months of inactivity");
+    assert_eq!(
+        stored.len(),
+        1,
+        "GuardianSet expired after 3 months of inactivity"
+    );
     assert_eq!(stored.get(0).unwrap().address, guardian);
 }
 
@@ -1482,7 +1491,8 @@ fn test_voting_works_with_optimized_vote_struct() {
     client.attempt_oracle_resolution(&market_id);
 
     let disputer = Address::generate(&e);
-    e.ledger().with_mut(|li| li.timestamp = resolution_deadline + 1000);
+    e.ledger()
+        .with_mut(|li| li.timestamp = resolution_deadline + 1000);
     client.file_dispute(&disputer, &market_id);
 
     // Two voters — outcome 1 gets 70%, outcome 0 gets 30%
@@ -1548,7 +1558,8 @@ fn test_double_vote_still_rejected_with_optimized_struct() {
     client.attempt_oracle_resolution(&market_id);
 
     let disputer = Address::generate(&e);
-    e.ledger().with_mut(|li| li.timestamp = resolution_deadline + 1000);
+    e.ledger()
+        .with_mut(|li| li.timestamp = resolution_deadline + 1000);
     client.file_dispute(&disputer, &market_id);
 
     let voter = Address::generate(&e);

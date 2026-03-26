@@ -2,7 +2,10 @@
 use crate::errors::ErrorCode;
 use crate::types::{CreatorReputation, MarketStatus, MarketTier, OracleConfig};
 use crate::{PredictIQ, PredictIQClient};
-use soroban_sdk::{testutils::{Address as _, Ledger as _}, Address, Env, String, Vec};
+use soroban_sdk::{
+    testutils::{Address as _, Ledger as _},
+    Address, Env, String, Vec,
+};
 
 fn setup() -> (Env, PredictIQClient<'static>, Address) {
     let env = Env::default();

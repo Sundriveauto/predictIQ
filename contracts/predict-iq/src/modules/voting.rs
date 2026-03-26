@@ -116,11 +116,8 @@ fn try_get_balance_at(
     match e.try_invoke_contract::<Val, ErrorCode>(token, &Symbol::new(e, "balance_at"), args) {
         Ok(Ok(val)) => i128::try_from_val(e, &val).map_err(|_| ErrorCode::OracleFailure),
     use soroban_sdk::{IntoVal, Val};
-    let args: soroban_sdk::Vec<Val> = soroban_sdk::vec![
-        e,
-        account.clone().into_val(e),
-        ledger.into_val(e),
-    ];
+    let args: soroban_sdk::Vec<Val> =
+        soroban_sdk::vec![e, account.clone().into_val(e), ledger.into_val(e),];
 
     match e.try_invoke_contract::<i128, ErrorCode>(token, &Symbol::new(e, "balance_at"), args) {
         Ok(Ok(balance)) => Ok(balance),

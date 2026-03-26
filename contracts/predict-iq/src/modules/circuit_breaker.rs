@@ -1,6 +1,6 @@
 use crate::errors::ErrorCode;
 use crate::modules::admin;
-use crate::types::{CircuitBreakerState, ConfigKey, GOV_TTL_LOW_THRESHOLD, GOV_TTL_HIGH_THRESHOLD};
+use crate::types::{CircuitBreakerState, ConfigKey, GOV_TTL_HIGH_THRESHOLD, GOV_TTL_LOW_THRESHOLD};
 use soroban_sdk::Env;
 
 /// Cool-down period before Open transitions to HalfOpen (Issue #12).
@@ -15,9 +15,11 @@ pub enum DataKey {
 }
 
 fn bump_gov_ttl(e: &Env) {
-    e.storage()
-        .persistent()
-        .extend_ttl(&ConfigKey::CircuitBreakerState, GOV_TTL_LOW_THRESHOLD, GOV_TTL_HIGH_THRESHOLD);
+    e.storage().persistent().extend_ttl(
+        &ConfigKey::CircuitBreakerState,
+        GOV_TTL_LOW_THRESHOLD,
+        GOV_TTL_HIGH_THRESHOLD,
+    );
 }
 
 pub fn set_state(e: &Env, state: CircuitBreakerState) -> Result<(), ErrorCode> {

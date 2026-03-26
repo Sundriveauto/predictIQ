@@ -1,7 +1,7 @@
 use crate::errors::ErrorCode;
 use crate::types::{
-    ConfigKey, Guardian, PendingUpgrade, MAJORITY_THRESHOLD_PERCENT, TIMELOCK_DURATION,
-    GOV_TTL_LOW_THRESHOLD, GOV_TTL_HIGH_THRESHOLD,
+    ConfigKey, Guardian, PendingUpgrade, GOV_TTL_HIGH_THRESHOLD, GOV_TTL_LOW_THRESHOLD,
+    MAJORITY_THRESHOLD_PERCENT, TIMELOCK_DURATION,
 };
 use soroban_sdk::{Address, BytesN, Env, Vec};
 

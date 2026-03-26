@@ -415,8 +415,8 @@ fn test_withdraw_refund_clears_bet_record() {
 
     // Cancel the market
     client.resolve_market(&market_id, &0); // resolve first so we can test via admin cancel path
-    // Use admin cancel instead
-    // Re-create a fresh market for the cancel path
+                                           // Use admin cancel instead
+                                           // Re-create a fresh market for the cancel path
     let market_id2 = create_simple_market(&client, &env, &user, &token);
     client.place_bet(&user, &market_id2, &0, &2000, &token, &None);
     client.cancel_market_admin(&market_id2);
