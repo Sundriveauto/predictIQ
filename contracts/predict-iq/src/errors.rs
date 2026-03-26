@@ -54,6 +54,9 @@ pub enum ErrorCode {
     InvalidReferrer = 48,
     GracePeriodActive = 49,
     InvalidDeadline = 50,
+    /// Issue #63: Emitted when an admin attempts fallback resolution but the
+    /// voting period has not yet elapsed — the deadlock is not yet confirmed.
+    VotingPeriodNotElapsed = 51,
     AlreadyInitialized = 100,
     NotAuthorized = 101,
     MarketNotFound = 102,
