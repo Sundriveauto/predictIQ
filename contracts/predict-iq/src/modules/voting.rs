@@ -5,6 +5,7 @@ use soroban_sdk::{contracttype, token, Address, Env, Symbol, Val};
 use soroban_sdk::{contracttype, token, Address, Env, Symbol};
 
 #[contracttype]
+#[derive(Clone)]
 pub enum DataKey {
     Vote(u64, Address),         // market_id, voter
     VoteTally(u64, u32),        // market_id, outcome -> total_weight
@@ -33,8 +34,16 @@ pub fn cast_vote(
     }
 
     let vote_key = DataKey::Vote(market_id, voter.clone());
-    if e.storage().persistent().has(&vote_key) {
-        return Err(ErrorCode::AlreadyVoted);
+    
+    // Issue #175: Allow vote revision - voters can change their vote before resolution deadline
+    // This enables more flexible governance where voters can respond to new information
+    let old_vote: Option<Vote> = e.storage().persistent().get(&vote_key);
+    if let Some(old_vote_data) = old_vote {
+        // Decrement the old outcome tally when vote is revised
+        let old_tally_key = DataKey::VoteTally(market_id, old_vote_data.outcome);
+        let mut old_tally: i128 = e.storage().persistent().get(&old_tally_key).unwrap_or(0);
+        old_tally -= old_vote_data.weight;
+        e.storage().persistent().set(&old_tally_key, &old_tally);
     }
 
     let snapshot_ledger = market
