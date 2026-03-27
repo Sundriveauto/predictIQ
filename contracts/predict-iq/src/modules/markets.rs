@@ -234,7 +234,7 @@ pub fn set_creator_reputation(
     creator: Address,
     reputation: CreatorReputation,
 ) -> Result<(), ErrorCode> {
-    crate::modules::admin::require_market_admin(e)?;
+    crate::modules::admin::require_admin(e)?;
     e.storage()
         .persistent()
         .set(&DataKey::CreatorReputation(creator), &reputation);
@@ -249,7 +249,7 @@ pub fn get_creation_deposit(e: &Env) -> i128 {
 }
 
 pub fn set_creation_deposit(e: &Env, amount: i128) -> Result<(), ErrorCode> {
-    crate::modules::admin::require_market_admin(e)?;
+    crate::modules::admin::require_admin(e)?;
     e.storage()
         .persistent()
         .set(&ConfigKey::CreationDeposit, &amount);
