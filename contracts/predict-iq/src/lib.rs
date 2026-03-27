@@ -24,6 +24,10 @@ impl PredictIQ {
         base_fee: i128,
         guardians: Vec<crate::types::Guardian>,
     ) -> Result<(), ErrorCode> {
+        // Require the deployer's authorization to prevent front-running attacks.
+        // Only the account that deployed this contract can call initialize.
+        e.deployer().require_auth();
+
         if e.storage().persistent().has(&ConfigKey::Admin) {
             return Err(ErrorCode::AlreadyInitialized);
         }
@@ -34,7 +38,7 @@ impl PredictIQ {
 
         admin::set_admin(&e, admin);
         e.storage().persistent().set(&ConfigKey::BaseFee, &base_fee);
-        e.storage().persistent().set(
+        e.storage().instance().set(
             &ConfigKey::CircuitBreakerState,
             &CircuitBreakerState::Closed,
         );
@@ -164,6 +168,14 @@ impl PredictIQ {
 
     pub fn get_base_fee(e: Env) -> i128 {
         crate::modules::fees::get_base_fee(&e)
+    }
+
+    pub fn set_fee_admin(e: Env, fee_admin: Address) -> Result<(), ErrorCode> {
+        crate::modules::admin::set_fee_admin(&e, fee_admin)
+    }
+
+    pub fn get_fee_admin(e: Env) -> Option<Address> {
+        crate::modules::admin::get_fee_admin(&e)
     }
 
     pub fn get_revenue(e: Env, token: Address) -> i128 {
