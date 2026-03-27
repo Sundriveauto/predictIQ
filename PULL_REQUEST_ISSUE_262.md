@@ -29,7 +29,7 @@ Related to indexer infrastructure and off-chain state reconstruction
 ### Test Suite Addition
 - **File**: `contracts/predict-iq/src/modules/events_test.rs` (new)
 - **27 Test Functions** organized by category:
-  - Oracle Events (4 tests): Verify event name, market_id, oracle address, and outcome
+  - Oracle Events (5 tests): Verify event name, market_id, oracle address, and outcome
   - Dispute Events (4 tests): Verify dispute filing/resolution with deadlines and outcomes
   - Resolution Events (4 tests): Verify resolution finalization with payouts
   - Consistency Tests (3 tests): Verify event naming convention consistency
