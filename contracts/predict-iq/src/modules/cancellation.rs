@@ -74,6 +74,12 @@ pub fn withdraw_refund(
 ) -> Result<i128, ErrorCode> {
     bettor.require_auth();
 
+    // Issue #93: Refunds are outbound token movements and must respect the
+    // circuit breaker just like place_bet. A paused contract must not allow
+    // any token egress — including refunds — to prevent exploitation during
+    // an active incident.
+    crate::modules::circuit_breaker::require_not_paused_for_high_risk(e)?;
+
     let mut market = markets::get_market(e, market_id).ok_or(ErrorCode::MarketNotFound)?;
 
     if market.status != MarketStatus::Cancelled {

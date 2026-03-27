@@ -800,3 +800,52 @@ fn test_parimutuel_proportional_payout() {
     assert!(w1 > 990);
     assert!(w2 > 1980);
 }
+
+// =============================================================================
+// Issue #93: SAC-safe transfer consistency and circuit breaker coverage
+// =============================================================================
+
+/// Refund must be blocked when the contract is in Paused state.
+/// This verifies that withdraw_refund respects require_not_paused_for_high_risk,
+/// closing the security bypass where a paused contract could still drain funds.
+#[test]
+fn test_withdraw_refund_blocked_when_paused() {
+    let (env, client, _admin, user, token) = setup_test_with_token();
+
+    env.ledger().with_mut(|li| li.timestamp = 500);
+
+    let market_id = create_simple_market(&client, &env, &user, &token);
+    client.place_bet(&user, &market_id, &0, &1000, &token, &None);
+    client.cancel_market_admin(&market_id);
+
+    // Pause the contract
+    client.pause();
+
+    // Refund must be rejected while paused
+    let result = client.try_withdraw_refund(&user, &market_id, &0, &token);
+    assert_eq!(
+        result,
+        Err(Ok(ErrorCode::ContractPaused)),
+        "withdraw_refund must be blocked when contract is paused"
+    );
+}
+
+/// Refund succeeds after the contract is unpaused, confirming the guard is
+/// the only thing blocking it (not a permanent state change).
+#[test]
+fn test_withdraw_refund_succeeds_after_unpause() {
+    let (env, client, _admin, user, token) = setup_test_with_token();
+
+    env.ledger().with_mut(|li| li.timestamp = 500);
+
+    let market_id = create_simple_market(&client, &env, &user, &token);
+    client.place_bet(&user, &market_id, &0, &1000, &token, &None);
+    client.cancel_market_admin(&market_id);
+
+    client.pause();
+    client.unpause();
+
+    // Should succeed now — net amount after 1% fee: 1000 - 10 = 990
+    let refund = client.withdraw_refund(&user, &market_id, &0, &token);
+    assert_eq!(refund, 990);
+}
