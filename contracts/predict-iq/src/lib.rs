@@ -4,6 +4,8 @@ use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, String, Vec};
 pub mod errors;
 mod modules;
 mod test;
+#[cfg(test)]
+mod query_tests;
 pub mod types;
 
 pub use errors::ErrorCode;
