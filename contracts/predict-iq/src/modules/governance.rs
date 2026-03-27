@@ -25,6 +25,15 @@ pub fn initialize_guardians(e: &Env, guardians: Vec<Guardian>) -> Result<(), Err
         return Err(ErrorCode::NotAuthorized);
     }
 
+    // Issue #19: None of the initial guardians may be the Admin.
+    if let Some(admin) = crate::modules::admin::get_admin(e) {
+        for g in guardians.iter() {
+            if g.address == admin {
+                return Err(ErrorCode::NotAuthorized);
+            }
+        }
+    }
+
     e.storage()
         .persistent()
         .set(&ConfigKey::GuardianSet, &guardians);
@@ -43,6 +52,13 @@ pub fn get_guardians(e: &Env) -> Vec<Guardian> {
 /// Add a guardian to the set. Only callable by admin.
 pub fn add_guardian(e: &Env, guardian: Guardian) -> Result<(), ErrorCode> {
     crate::modules::admin::require_admin(e)?;
+
+    // Issue #19: Admin must not be in the Guardian set — enforces separation of powers.
+    if let Some(admin) = crate::modules::admin::get_admin(e) {
+        if guardian.address == admin {
+            return Err(ErrorCode::NotAuthorized);
+        }
+    }
 
     let mut guardians = get_guardians(e);
 

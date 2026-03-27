@@ -673,6 +673,36 @@ fn test_add_guardian() {
     assert_eq!(stored_guardians.len(), 2);
 }
 
+// Issue #19: Admin-Guardian separation tests
+
+#[test]
+fn test_add_admin_as_guardian_rejected() {
+    let (e, admin, _contract_id, client) = setup_test_env();
+
+    let guardian = Address::generate(&e);
+    let mut guardians = Vec::new(&e);
+    guardians.push_back(types::Guardian { address: guardian.clone(), voting_power: 1 });
+    client.initialize_guardians(&guardians);
+
+    // Attempt to add the admin address as a guardian — must be rejected
+    let result = client.try_add_guardian(&types::Guardian {
+        address: admin.clone(),
+        voting_power: 1,
+    });
+    assert_eq!(result, Err(Ok(ErrorCode::NotAuthorized)));
+}
+
+#[test]
+fn test_initialize_guardians_with_admin_rejected() {
+    let (e, admin, _contract_id, client) = setup_test_env();
+
+    let mut guardians = Vec::new(&e);
+    guardians.push_back(types::Guardian { address: admin.clone(), voting_power: 1 });
+
+    let result = client.try_initialize_guardians(&guardians);
+    assert_eq!(result, Err(Ok(ErrorCode::NotAuthorized)));
+}
+
 #[test]
 fn test_initiate_upgrade_starts_timelock() {
     let (e, admin, _contract_id, client) = setup_test_env();
