@@ -407,47 +407,128 @@ fn test_tiered_commission_rates() {
 }
 
 #[test]
-fn test_admin_can_reduce_push_threshold_for_gas_intensive_tokens() {
+fn test_push_mode_market_fails_resolution_when_winners_exceed_threshold() {
     let (e, _admin, _contract_id, client) = setup_test_env();
     client.set_creation_deposit(&0);
 
     let creator = Address::generate(&e);
     let native_token = Address::generate(&e);
 
-    // Baseline: estimated_winners = 20 (tally=2000, avg bet proxy=100), default threshold=50.
-    let market_default = create_test_market(
+    // Market is created in Pull mode (the only mode create_market sets).
+    // To test the Push guard we seed winner_counts above the threshold directly.
+    let market_id = create_test_market(
         &client,
         &e,
         &creator,
         types::MarketTier::Basic,
         &native_token,
     );
-    e.storage().persistent().set(
-        &crate::modules::voting::DataKey::VoteTally(market_default, 0),
-        &2000i128,
-    );
-    client.resolve_market(&market_default, &0);
-    let resolved_default = client.get_market(&market_default).unwrap();
-    assert_eq!(resolved_default.payout_mode, types::PayoutMode::Push);
 
-    // Admin lowers threshold to make the same winner estimate switch to Pull.
-    client.set_max_push_payout_winners(&10);
-    assert_eq!(client.get_max_push_payout_winners(), 10);
+    // Force payout_mode to Push and winner_counts[0] above the default threshold (50).
+    let market_key = crate::modules::markets::DataKey::Market(market_id);
+    let mut m: types::Market = e.storage().persistent().get(&market_key).unwrap();
+    m.payout_mode = types::PayoutMode::Push;
+    m.winner_counts.set(0, 51u32); // exceeds MAX_PUSH_PAYOUT_WINNERS = 50
+    e.storage().persistent().set(&market_key, &m);
 
-    let market_lowered = create_test_market(
+    // Resolution must fail with TooManyWinners — not silently flip to Pull.
+    let result = client.try_resolve_market(&market_id, &0);
+    assert_eq!(result, Err(Ok(crate::errors::ErrorCode::TooManyWinners)));
+
+    // payout_mode must still be Push — it was never changed.
+    let market = client.get_market(&market_id).unwrap();
+    assert_eq!(market.payout_mode, types::PayoutMode::Push);
+}
+
+#[test]
+fn test_pull_mode_market_resolves_regardless_of_winner_count() {
+    let (e, _admin, _contract_id, client) = setup_test_env();
+    client.set_creation_deposit(&0);
+
+    let creator = Address::generate(&e);
+    let native_token = Address::generate(&e);
+
+    // Pull mode markets skip the gas-limit guard entirely.
+    let market_id = create_test_market(
         &client,
         &e,
         &creator,
         types::MarketTier::Basic,
         &native_token,
     );
-    e.storage().persistent().set(
-        &crate::modules::voting::DataKey::VoteTally(market_lowered, 0),
-        &2000i128,
+
+    // Seed a very large winner count — should not block resolution for Pull markets.
+    let market_key = crate::modules::markets::DataKey::Market(market_id);
+    let mut m: types::Market = e.storage().persistent().get(&market_key).unwrap();
+    m.winner_counts.set(0, 10_000u32);
+    e.storage().persistent().set(&market_key, &m);
+
+    let result = client.try_resolve_market(&market_id, &0);
+    assert!(result.is_ok());
+
+    // payout_mode must remain Pull — never mutated.
+    let market = client.get_market(&market_id).unwrap();
+    assert_eq!(market.payout_mode, types::PayoutMode::Pull);
+}
+
+#[test]
+fn test_push_mode_market_resolves_when_winners_within_threshold() {
+    let (e, _admin, _contract_id, client) = setup_test_env();
+    client.set_creation_deposit(&0);
+
+    let creator = Address::generate(&e);
+    let native_token = Address::generate(&e);
+
+    let market_id = create_test_market(
+        &client,
+        &e,
+        &creator,
+        types::MarketTier::Basic,
+        &native_token,
     );
-    client.resolve_market(&market_lowered, &0);
-    let resolved_lowered = client.get_market(&market_lowered).unwrap();
-    assert_eq!(resolved_lowered.payout_mode, types::PayoutMode::Pull);
+
+    let market_key = crate::modules::markets::DataKey::Market(market_id);
+    let mut m: types::Market = e.storage().persistent().get(&market_key).unwrap();
+    m.payout_mode = types::PayoutMode::Push;
+    m.winner_counts.set(0, 10u32); // well below threshold of 50
+    e.storage().persistent().set(&market_key, &m);
+
+    let result = client.try_resolve_market(&market_id, &0);
+    assert!(result.is_ok());
+
+    // payout_mode must still be Push.
+    let market = client.get_market(&market_id).unwrap();
+    assert_eq!(market.payout_mode, types::PayoutMode::Push);
+}
+
+#[test]
+fn test_admin_can_lower_threshold_to_protect_push_markets() {
+    let (e, _admin, _contract_id, client) = setup_test_env();
+    client.set_creation_deposit(&0);
+
+    let creator = Address::generate(&e);
+    let native_token = Address::generate(&e);
+
+    // Lower threshold to 5.
+    client.set_max_push_payout_winners(&5);
+    assert_eq!(client.get_max_push_payout_winners(), 5);
+
+    let market_id = create_test_market(
+        &client,
+        &e,
+        &creator,
+        types::MarketTier::Basic,
+        &native_token,
+    );
+
+    let market_key = crate::modules::markets::DataKey::Market(market_id);
+    let mut m: types::Market = e.storage().persistent().get(&market_key).unwrap();
+    m.payout_mode = types::PayoutMode::Push;
+    m.winner_counts.set(0, 6u32); // exceeds new threshold of 5
+    e.storage().persistent().set(&market_key, &m);
+
+    let result = client.try_resolve_market(&market_id, &0);
+    assert_eq!(result, Err(Ok(crate::errors::ErrorCode::TooManyWinners)));
 }
 
 #[test]

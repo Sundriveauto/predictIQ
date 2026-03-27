@@ -1,7 +1,7 @@
 use crate::errors::ErrorCode;
 use crate::modules::markets;
 use crate::types::{ConfigKey, MarketStatus, PayoutMode};
-use soroban_sdk::{contracttype, Address, Env};
+use soroban_sdk::{Address, Env};
 
 #[derive(Clone)]
 pub struct ResolutionMetrics {
@@ -40,7 +40,7 @@ pub fn file_dispute(e: &Env, disciplinarian: Address, market_id: u64) -> Result<
     Ok(())
 }
 
-/// Issue #23: payout_mode is immutable after creation — do not switch it here.
+/// Issue #23: payout_mode is immutable after creation — never mutated here.
 /// Issue #24: Use actual winner_counts instead of heuristic.
 /// Issue #35: Calculate and emit actual total payout.
 pub fn resolve_market(e: &Env, market_id: u64, winning_outcome: u32) -> Result<(), ErrorCode> {
@@ -50,15 +50,16 @@ pub fn resolve_market(e: &Env, market_id: u64, winning_outcome: u32) -> Result<(
         return Err(ErrorCode::InvalidOutcome);
     }
 
-    // Estimate winner count (in production, maintain a counter)
-    let estimated_winners = estimate_winner_count(e, market_id, winning_outcome);
-    let max_push_winners = get_max_push_payout_winners(e);
-
-    // Automatically select payout mode based on winner count
-    if estimated_winners > max_push_winners {
-        market.payout_mode = PayoutMode::Pull;
-    } else {
-        market.payout_mode = PayoutMode::Push;
+    // Issue #23: payout_mode is fixed at creation and must not be changed here.
+    // If the market was created in Push mode but the winner count now exceeds the
+    // gas-safe threshold, fail loudly so an admin can intervene rather than
+    // silently flipping to Pull and surprising users who expected auto-distribution.
+    if market.payout_mode == PayoutMode::Push {
+        let winner_count = markets::count_bets_for_outcome(e, market_id, winning_outcome);
+        let max_push_winners = get_max_push_payout_winners(e);
+        if winner_count > max_push_winners {
+            return Err(ErrorCode::TooManyWinners);
+        }
     }
 
     market.status = MarketStatus::Resolved;
@@ -105,20 +106,6 @@ pub fn get_max_push_payout_winners(e: &Env) -> u32 {
         .persistent()
         .get(&ConfigKey::MaxPushPayoutWinners)
         .unwrap_or(crate::types::MAX_PUSH_PAYOUT_WINNERS)
-}
-
-// Helper function to estimate winner count without iterating all bets
-fn estimate_winner_count(e: &Env, market_id: u64, outcome: u32) -> u32 {
-    // In production, maintain a counter per outcome during bet placement
-    // For now, use the tally weight as a proxy
-    let tally = crate::modules::voting::get_tally(e, market_id, outcome);
-
-    // Rough estimate: assume average bet is 100 units
-    if tally > 0 {
-        (tally / 100).max(1) as u32
-    } else {
-        0
-    }
 }
 
 // Batch resolution metrics for monitoring
