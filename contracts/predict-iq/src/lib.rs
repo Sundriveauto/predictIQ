@@ -166,6 +166,14 @@ impl PredictIQ {
         crate::modules::fees::get_base_fee(&e)
     }
 
+    pub fn set_fee_admin(e: Env, fee_admin: Address) -> Result<(), ErrorCode> {
+        crate::modules::admin::set_fee_admin(&e, fee_admin)
+    }
+
+    pub fn get_fee_admin(e: Env) -> Option<Address> {
+        crate::modules::admin::get_fee_admin(&e)
+    }
+
     pub fn get_revenue(e: Env, token: Address) -> i128 {
         crate::modules::fees::get_revenue(&e, token)
     }
