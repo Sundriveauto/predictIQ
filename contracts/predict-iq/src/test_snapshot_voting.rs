@@ -197,9 +197,9 @@ fn test_token_locking_fallback() {
     assert_eq!(voter_balance_after, initial_balance - vote_weight);
     assert_eq!(contract_balance, vote_weight);
 
-    // Try to unlock before resolution deadline - should fail
+    // Try to unlock before resolution deadline - should fail with MarketNotResolved
     let result = client.try_unlock_tokens(&voter, &market_id);
-    assert_eq!(result, Err(Ok(ErrorCode::VotingNotStarted)));
+    assert_eq!(result, Err(Ok(ErrorCode::MarketNotResolved)));
 
     // Advance time past resolution deadline
     e.ledger().with_mut(|li| {
