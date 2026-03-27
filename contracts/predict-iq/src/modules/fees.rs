@@ -28,7 +28,7 @@ pub fn get_base_fee(e: &Env) -> i128 {
 }
 
 pub fn set_base_fee(e: &Env, amount: i128) -> Result<(), ErrorCode> {
-    admin::require_fee_admin(e)?;
+    admin::require_admin(e)?;
     e.storage().persistent().set(&ConfigKey::BaseFee, &amount);
     bump_config_ttl(e, &ConfigKey::BaseFee);
     Ok(())
@@ -90,33 +90,13 @@ pub fn get_revenue(e: &Env, token: Address) -> i128 {
         .unwrap_or(0)
 }
 
-/// Issue #26: Withdraw accumulated protocol fees to a recipient address.
-///
-/// Access: FeeAdmin or Admin. The caller must be one of these roles; the
-/// host enforces the signature via `require_auth`. If neither role is set
-/// or the caller is neither, `NotAuthorized` is returned.
-///
-/// Emits a `fees_withdrawn` event on success.
+/// Issue #26: Allow Admin to withdraw accumulated protocol fees.
 pub fn withdraw_protocol_fees(
     e: &Env,
     token: &Address,
     recipient: &Address,
 ) -> Result<i128, ErrorCode> {
-    // Authorize: accept either FeeAdmin or Admin.
-    // We try FeeAdmin first (least-privilege); fall back to Admin.
-    let authorized = if let Some(fee_admin) = admin::get_fee_admin(e) {
-        fee_admin.require_auth();
-        true
-    } else if let Some(master_admin) = admin::get_admin(e) {
-        master_admin.require_auth();
-        true
-    } else {
-        false
-    };
-
-    if !authorized {
-        return Err(ErrorCode::NotAuthorized);
-    }
+    admin::require_admin(e)?;
 
     let key = DataKey::FeeRevenue(token.clone());
     let balance: i128 = e.storage().persistent().get(&key).unwrap_or(0);

@@ -51,7 +51,6 @@ pub fn create_market(
 
         // Also verify parent_outcome_idx is within parent's options range
         let parent_market = get_market(e, parent_id).ok_or(ErrorCode::MarketNotFound)?;
-        let parent_market = get_market(e, parent_id).ok_or(ErrorCode::MarketNotFound)?;
 
         // Validate parent_outcome_idx is within parent's options range
         if parent_outcome_idx >= parent_market.options.len() {
@@ -129,9 +128,12 @@ pub fn create_market(
         parent_outcome_idx,
         resolved_at: None,
         token_address: native_token,
+        outcome_stakes: soroban_sdk::Map::new(e),
         pending_resolution_timestamp: None,
         dispute_snapshot_ledger: None,
         dispute_timestamp: None,
+        // Issue #24: initialize precise winner counter; incremented in place_bet.
+        winner_counts: soroban_sdk::Map::new(e),
     };
 
     e.storage()
@@ -232,7 +234,7 @@ pub fn set_creator_reputation(
     creator: Address,
     reputation: CreatorReputation,
 ) -> Result<(), ErrorCode> {
-    crate::modules::admin::require_market_admin(e)?;
+    crate::modules::admin::require_admin(e)?;
     e.storage()
         .persistent()
         .set(&DataKey::CreatorReputation(creator), &reputation);
@@ -247,7 +249,7 @@ pub fn get_creation_deposit(e: &Env) -> i128 {
 }
 
 pub fn set_creation_deposit(e: &Env, amount: i128) -> Result<(), ErrorCode> {
-    crate::modules::admin::require_market_admin(e)?;
+    crate::modules::admin::require_admin(e)?;
     e.storage()
         .persistent()
         .set(&ConfigKey::CreationDeposit, &amount);

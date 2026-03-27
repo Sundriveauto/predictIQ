@@ -57,6 +57,9 @@ pub enum ErrorCode {
     /// Issue #63: Emitted when an admin attempts fallback resolution but the
     /// voting period has not yet elapsed — the deadlock is not yet confirmed.
     VotingPeriodNotElapsed = 51,
+    /// Issue #11: Emitted when a SAC token transfer fails programmatically
+    /// (e.g. frozen asset, insufficient balance) instead of causing a host panic.
+    TransferFailed = 52,
     AlreadyInitialized = 100,
     NotAuthorized = 101,
     MarketNotFound = 102,
