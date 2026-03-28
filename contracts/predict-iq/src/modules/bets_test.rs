@@ -849,3 +849,121 @@ fn test_withdraw_refund_succeeds_after_unpause() {
     let refund = client.withdraw_refund(&user, &market_id, &0, &token);
     assert_eq!(refund, 990);
 }
+
+// ---------------------------------------------------------------------------
+// Fault-injection / cleanup-path tests
+//
+// These tests assert that no stale Bet storage keys remain after any cleanup
+// path — successful or failed.  They use `get_bet` to inspect storage directly
+// so they catch orphaned records that higher-level assertions would miss.
+// ---------------------------------------------------------------------------
+
+/// After a successful `claim_winnings` the Bet record must be gone.
+/// Verifies the happy-path removal in `internal_claim_amount`.
+#[test]
+fn test_claim_winnings_removes_bet_key() {
+    let (env, client, _admin, user, token) = setup_test_with_token();
+    env.ledger().set_timestamp(500);
+
+    let market_id = create_simple_market(&client, &env, &user, &token);
+    client.place_bet(&user, &market_id, &0, &1000, &token, &None);
+    client.resolve_market(&market_id, &0);
+
+    client.claim_winnings(&user, &market_id);
+
+    // Bet key must be absent — no orphaned record.
+    assert!(
+        client.get_bet(&market_id, &user, &0).is_none(),
+        "bet key must be removed after successful claim"
+    );
+}
+
+/// After a successful `withdraw_refund` the Bet record must be gone.
+/// Verifies the refund cleanup path in `internal_claim_amount`.
+#[test]
+fn test_withdraw_refund_removes_bet_key() {
+    let (env, client, _admin, user, token) = setup_test_with_token();
+    env.ledger().set_timestamp(500);
+
+    let market_id = create_simple_market(&client, &env, &user, &token);
+    client.place_bet(&user, &market_id, &0, &1000, &token, &None);
+    client.cancel_market_admin(&market_id);
+
+    client.withdraw_refund(&user, &market_id, &0, &token);
+
+    assert!(
+        client.get_bet(&market_id, &user, &0).is_none(),
+        "bet key must be removed after successful refund"
+    );
+}
+
+/// A failed `withdraw_refund` (wrong token) must leave the Bet record intact —
+/// partial cleanup must not silently drop the record before the transfer.
+#[test]
+fn test_failed_withdraw_refund_leaves_bet_key_intact() {
+    let (env, client, _admin, user, token) = setup_test_with_token();
+    env.ledger().set_timestamp(500);
+
+    let market_id = create_simple_market(&client, &env, &user, &token);
+    client.place_bet(&user, &market_id, &0, &1000, &token, &None);
+    client.cancel_market_admin(&market_id);
+
+    // Use a different token address to force an early error before any cleanup.
+    let wrong_token = Address::generate(&env);
+    let result = client.try_withdraw_refund(&user, &market_id, &0, &wrong_token);
+    assert!(result.is_err(), "refund with wrong token must fail");
+
+    // Bet record must still be present — nothing was cleaned up.
+    assert!(
+        client.get_bet(&market_id, &user, &0).is_some(),
+        "bet key must survive a failed refund attempt"
+    );
+}
+
+/// A failed `claim_winnings` (losing outcome) must leave no stale Claimed
+/// sentinel and must not remove the Bet record for the losing outcome.
+#[test]
+fn test_failed_claim_leaves_no_orphaned_keys() {
+    let (env, client, _admin, user, token) = setup_test_with_token();
+    env.ledger().set_timestamp(500);
+
+    let market_id = create_simple_market(&client, &env, &user, &token);
+    // Bet on the losing outcome (1); market resolves to outcome 0.
+    client.place_bet(&user, &market_id, &1, &1000, &token, &None);
+    client.resolve_market(&market_id, &0);
+
+    let result = client.try_claim_winnings(&user, &market_id);
+    assert_eq!(result, Err(Ok(ErrorCode::NoWinnings)));
+
+    // The losing bet record must still be present (not silently removed).
+    assert!(
+        client.get_bet(&market_id, &user, &1).is_some(),
+        "losing bet key must not be removed by a failed claim"
+    );
+}
+
+/// Refunding one outcome must not disturb the Bet record for a different
+/// outcome held by the same bettor — simulates partial-cleanup isolation.
+#[test]
+fn test_partial_refund_leaves_other_outcome_bet_intact() {
+    let (env, client, _admin, user, token) = setup_test_with_token();
+    env.ledger().set_timestamp(500);
+
+    let market_id = create_simple_market(&client, &env, &user, &token);
+    client.place_bet(&user, &market_id, &0, &1000, &token, &None);
+    client.place_bet(&user, &market_id, &1, &2000, &token, &None);
+    client.cancel_market_admin(&market_id);
+
+    // Refund only outcome 0.
+    client.withdraw_refund(&user, &market_id, &0, &token);
+
+    // Outcome 0 key gone, outcome 1 key still present.
+    assert!(
+        client.get_bet(&market_id, &user, &0).is_none(),
+        "refunded bet key must be removed"
+    );
+    assert!(
+        client.get_bet(&market_id, &user, &1).is_some(),
+        "unredeemed bet key must remain intact after partial refund"
+    );
+}
